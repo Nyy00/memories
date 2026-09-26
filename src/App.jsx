@@ -50,16 +50,25 @@ function AnimatedRoutes() {
   )
 }
 
+function AppLayout() {
+  const location = useLocation()
+  const isAdmin = location.pathname.startsWith('/admin')
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {!isAdmin && <Navbar />}
+      <main className="flex-1">
+        <AnimatedRoutes />
+      </main>
+      {!isAdmin && <Footer />}
+    </div>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="flex flex-col min-h-screen">
-        <Navbar />
-        <main className="flex-1">
-          <AnimatedRoutes />
-        </main>
-        <Footer />
-      </div>
+      <AppLayout />
     </BrowserRouter>
   )
 }
