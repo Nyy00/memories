@@ -135,20 +135,23 @@ on conflict do nothing;
 -- insert into storage.policies (name, bucket_id, definition) values
 --   ('Public read memories', 'memories', '{"role":"anon","operation":"SELECT"}');
 
--- ─── OPTIONAL: Allow anon to write (for Admin Panel at /admin) ──────────────
--- WARNING: This allows anyone who knows /admin to write data.
--- Only enable if you're okay with that, or protect /admin with a secret path.
+-- ─── Admin Panel Access (Authenticated Only) ───────────────────
+-- Now that we have a login screen, only logged-in (authenticated) users
+-- can add, edit, or delete data.
 
--- create policy "Anon can insert memories" on public.memories for insert with check (true);
--- create policy "Anon can update memories" on public.memories for update using (true);
--- create policy "Anon can delete memories" on public.memories for delete using (true);
+create policy "Auth can insert memories" on public.memories for insert to authenticated with check (true);
+create policy "Auth can update memories" on public.memories for update to authenticated using (true);
+create policy "Auth can delete memories" on public.memories for delete to authenticated using (true);
 
--- create policy "Anon can insert memory_images" on public.memory_images for insert with check (true);
--- create policy "Anon can delete memory_images" on public.memory_images for delete using (true);
+create policy "Auth can insert memory_images" on public.memory_images for insert to authenticated with check (true);
+create policy "Auth can delete memory_images" on public.memory_images for delete to authenticated using (true);
 
--- create policy "Anon can insert timeline" on public.timeline for insert with check (true);
--- create policy "Anon can update timeline" on public.timeline for update using (true);
--- create policy "Anon can delete timeline" on public.timeline for delete using (true);
+create policy "Auth can insert timeline" on public.timeline for insert to authenticated with check (true);
+create policy "Auth can update timeline" on public.timeline for update to authenticated using (true);
+create policy "Auth can delete timeline" on public.timeline for delete to authenticated using (true);
 
--- create policy "Anon can insert quotes" on public.quotes for insert with check (true);
--- create policy "Anon can delete quotes" on public.quotes for delete using (true);
+create policy "Auth can insert quotes" on public.quotes for insert to authenticated with check (true);
+create policy "Auth can delete quotes" on public.quotes for delete to authenticated using (true);
+
+-- To allow file uploads via Admin Panel, you also need to run this storage policy:
+-- insert into storage.policies (name, bucket_id, definition) values ('Auth can upload memories', 'memories', '{"role":"authenticated","operation":"INSERT"}');

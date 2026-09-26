@@ -1,5 +1,25 @@
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 
+// ─── Auth ────────────────────────────────────────────────────
+
+export async function adminLogin(email, password) {
+  if (!isSupabaseConfigured) throw new Error('Supabase not configured')
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+  if (error) throw error
+  return data
+}
+
+export async function adminLogout() {
+  if (!isSupabaseConfigured) return
+  await supabase.auth.signOut()
+}
+
+export async function checkSession() {
+  if (!isSupabaseConfigured) return null
+  const { data: { session } } = await supabase.auth.getSession()
+  return session
+}
+
 // ─── Upload ke Supabase Storage ──────────────────────────────
 
 export async function uploadFile(file, folder = 'photos') {

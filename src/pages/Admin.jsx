@@ -4,15 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Edit2, Trash2, Upload, Save, X, Check, AlertTriangle,
   Image, Video, BookOpen, Heart, Clock, Quote, ChevronDown,
-  Home, ArrowLeft, Eye, Star
+  Home, ArrowLeft, Eye, Star, LogOut, Lock
 } from 'lucide-react'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import {
   adminGetAllMemories, adminGetAllTimeline, adminGetAllQuotes,
   createMemory, updateMemory, deleteMemory,
   createTimelineEvent, updateTimelineEvent, deleteTimelineEvent,
   createQuote, deleteQuote,
-  uploadFile,
+  uploadFile, adminLogin, adminLogout, checkSession
 } from '../services/adminService'
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -691,6 +691,12 @@ const TABS = [
 export default function Admin() {
   const [activeTab, setActiveTab] = useState('memories')
   const [toasts, setToasts] = useState([])
+  const [session, setSession] = useState(null)
+  const [loadingAuth, setLoadingAuth] = useState(true)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
 
   const toast = useCallback((message, type = 'success') => {
     const id = Date.now()
@@ -701,6 +707,75 @@ export default function Admin() {
     setToasts(t => t.filter(x => x.id !== id))
   }, [])
 
+  // Cek apakah sudah login saat pertama kali halaman dibuka
+  useEffect(() => {
+    checkSession().then(sess => {
+      setSession(sess)
+      setLoadingAuth(false)
+    })
+  }, [])
+
+  const handleLogin = async (e) => {
+    e.preventDefault()
+    setIsLoggingIn(true)
+    setLoginError('')
+    try {
+      await adminLogin(email, password)
+      const sess = await checkSession()
+      setSession(sess)
+    } catch (e) {
+      setLoginError(e.message || 'Login failed')
+    } finally {
+      setIsLoggingIn(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    await adminLogout()
+    setSession(null)
+  }
+
+  // Loading Screen
+  if (loadingAuth) {
+    return <div className="min-h-screen flex items-center justify-center bg-warm-50">
+      <div className="w-8 h-8 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin"></div>
+    </div>
+  }
+
+  // Halaman Login (Jika belum login)
+  if (!session) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-warm-50 p-4">
+        <Link to="/" className="absolute top-6 left-6 text-warm-400 hover:text-rose-500 transition-colors flex items-center gap-2">
+          <ArrowLeft size={16} /> Back to Site
+        </Link>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="card p-8 max-w-sm w-full bg-white border border-rose-100 shadow-xl text-center">
+          <div className="w-14 h-14 bg-rose-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Lock size={24} className="text-rose-500" />
+          </div>
+          <h1 className="font-display text-2xl text-warm-800 mb-2">Admin Access</h1>
+          <p className="text-warm-400 text-sm mb-6">Silakan login untuk mengedit kenangan.</p>
+          
+          <form onSubmit={handleLogin} className="space-y-4 text-left">
+            <div>
+              <label className="block text-sm font-medium text-warm-700 mb-1">Email</label>
+              <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="input-field" placeholder="admin@domain.com" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-warm-700 mb-1">Password</label>
+              <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="input-field" placeholder="••••••••" />
+            </div>
+            {loginError && <p className="text-red-500 text-xs font-medium bg-red-50 p-2 rounded">{loginError}</p>}
+            <button type="submit" disabled={isLoggingIn} className="btn-primary w-full justify-center mt-2">
+              {isLoggingIn ? 'Memeriksa...' : 'Login'}
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    )
+  }
+
+  // Halaman Admin Utama (Jika sudah login)
   return (
     <div className="min-h-screen bg-warm-50 pt-4 pb-20">
       {/* Header */}
@@ -711,13 +786,15 @@ export default function Admin() {
             <span className="font-display text-base font-semibold text-warm-800">
               Our Memories — Admin
             </span>
-            <span className="px-2 py-0.5 bg-rose-50 text-rose-500 text-xs rounded-full font-medium">
-              Hidden
-            </span>
           </div>
-          <Link to="/" className="btn-ghost text-sm">
-            <Home size={15} /> View Site
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link to="/" className="text-warm-400 hover:text-rose-500 text-sm font-medium transition-colors">
+              View Site
+            </Link>
+            <button onClick={handleLogout} className="flex items-center gap-2 text-sm text-red-500 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg font-medium transition-colors">
+              <LogOut size={14} /> Logout
+            </button>
+          </div>
         </div>
       </div>
 
