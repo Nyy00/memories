@@ -540,8 +540,17 @@ function TimelineTab({ toast }) {
               <textarea className="input-field resize-none" value={form.description} onChange={e => set('description', e.target.value)} rows={2} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-warm-700 mb-1">Image URL</label>
-              <input className="input-field" value={form.image_url} onChange={e => set('image_url', e.target.value)} placeholder="https://..." />
+              <label className="block text-sm font-medium text-warm-700 mb-2">Image</label>
+              <div className="space-y-2">
+                {isSupabaseConfigured && (
+                  <ImageUploader
+                    label="Upload Image"
+                    folder="photos"
+                    onUploaded={url => set('image_url', url)}
+                  />
+                )}
+                <input className="input-field" value={form.image_url} onChange={e => set('image_url', e.target.value)} placeholder="https://... (or paste URL after uploading)" />
+              </div>
             </div>
             <div className="flex gap-3">
               <button onClick={() => { setShowForm(false); setEditing(null) }} className="btn-secondary"><X size={16} /> Cancel</button>
