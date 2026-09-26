@@ -68,7 +68,7 @@ function Hero({ featuredImage }) {
             className="flex items-center gap-2 text-warm-500 text-sm"
           >
             <Heart size={14} className="text-rose-400 fill-rose-400 animate-heartbeat" />
-            <span>Together since February 14, 2023</span>
+            <span>Together since 17 June 2025</span>
           </motion.div>
 
           <motion.div

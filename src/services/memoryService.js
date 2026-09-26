@@ -119,7 +119,7 @@ export async function getMemoryStats() {
   if (!isSupabaseConfigured) {
     const photos = seedMemories.filter((m) => m.type === 'photo').length
     const videos = seedMemories.filter((m) => m.type === 'video').length
-    const startDate = new Date('2023-06-01')
+    const startDate = new Date('2025-06-17')
     const now = new Date()
     const years = (
       (now - startDate) /
@@ -148,7 +148,7 @@ export async function getMemoryStats() {
     .select('*', { count: 'exact', head: true })
     .eq('type', 'video')
 
-  const startDate = new Date('2023-06-01')
+  const startDate = new Date('2025-06-17')
   const years = ((new Date() - startDate) / (1000 * 60 * 60 * 24 * 365.25)).toFixed(1)
 
   return {
@@ -181,11 +181,47 @@ export async function getGalleryImages() {
   if (!isSupabaseConfigured) {
     return { data: seedGalleryImages, error: null }
   }
-  const { data, error } = await supabase
-    .from('memory_images')
-    .select('*, memories(title, memory_date, location)')
-    .order('created_at', { ascending: false })
-  return { data: data || [], error }
+  
+  // Ambil gambar dari memories (cover_image)
+  const { data: memoriesData, error: memError } = await supabase
+    .from('memories')
+    .select('id, cover_image, title, memory_date, location')
+    .not('cover_image', 'is', null)
+    .neq('cover_image', '')
+
+  if (memError) return { data: [], error: memError }
+
+  // Ambil gambar dari timeline (image_url)
+  const { data: timelineData, error: timeError } = await supabase
+    .from('timeline')
+    .select('id, image_url, title, event_date')
+    .not('image_url', 'is', null)
+    .neq('image_url', '')
+
+  if (timeError) return { data: [], error: timeError }
+
+  // Gabungkan dan format data
+  const combined = [
+    ...memoriesData.map(m => ({
+      id: `mem-${m.id}`,
+      url: m.cover_image,
+      caption: m.title,
+      date: m.memory_date,
+      location: m.location
+    })),
+    ...timelineData.map(t => ({
+      id: `time-${t.id}`,
+      url: t.image_url,
+      caption: t.title,
+      date: t.event_date,
+      location: ''
+    }))
+  ]
+
+  // Urutkan terbaru ke terlama
+  combined.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
+
+  return { data: combined, error: null }
 }
 
 // ─── Videos ──────────────────────────────────────────────────────────────────
