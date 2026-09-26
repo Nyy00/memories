@@ -103,26 +103,6 @@ create index if not exists memories_featured_idx     on public.memories(is_featu
 create index if not exists memory_images_memory_idx  on public.memory_images(memory_id);
 create index if not exists timeline_event_date_idx   on public.timeline(event_date asc);
 
--- ─── Sample Data ─────────────────────────────────────────────
-
-insert into public.timeline (emoji, title, description, event_date) values
-  ('💫', 'We First Met',        'Awal dari semuanya — sebuah pertemuan yang tidak disengaja di sebuah acara bersama.',        '2022-11-20'),
-  ('☕', 'Our First Date',       'Pertama kali kita menghabiskan waktu berdua. Kopi, obrolan, dan banyak tawa.',              '2023-02-14'),
-  ('❤️', 'We Became Official',  'Hari ketika kita memutuskan untuk tidak lagi hanya berteman.',                               '2023-06-01'),
-  ('🌹', 'First Anniversary',    'Satu tahun yang penuh cerita, tawa, dan kenangan yang tidak terlupakan.',                   '2024-02-14'),
-  ('✈️', 'Our First Trip',      'Yogyakarta — perjalanan pertama kita. Sebuah petualangan yang selalu dirindukan.',           '2024-05-20'),
-  ('🌊', 'Second Anniversary',   'Dua tahun bersama, dirayakan di pulau yang selalu kita impikan.',                           '2025-02-14')
-on conflict do nothing;
-
-insert into public.quotes (text) values
-  ('Di antara begitu banyak hal yang terjadi dalam hidup, aku bersyukur salah satunya adalah bertemu kamu.'),
-  ('Kamu bukan hanya seseorang yang aku cintai. Kamu adalah alasan mengapa aku percaya bahwa hal-hal baik memang ada.'),
-  ('Bersamamu, bahkan hari yang biasa terasa seperti kenangan yang ingin selalu aku simpan.'),
-  ('Aku tidak tahu ke mana hidup akan membawa kita, tapi selama kamu ada, aku tidak takut.'),
-  ('Setiap foto yang kita ambil bukan hanya gambar. Itu adalah bukti bahwa kita pernah benar-benar bahagia.'),
-  ('Hal terbaik yang pernah terjadi padaku adalah ketika kamu memilih untuk tetap ada.')
-on conflict do nothing;
-
 -- ─── Storage Buckets ─────────────────────────────────────────
 -- Run in Supabase Storage or via Dashboard:
 -- 1. Create bucket: "memories" (public)
