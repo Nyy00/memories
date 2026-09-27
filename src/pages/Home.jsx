@@ -120,7 +120,7 @@ function Hero({ featuredImage }) {
           <motion.div
             animate={{ y: [0, -8, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute -top-4 -left-4 glass rounded-2xl px-4 py-2 shadow-card hidden sm:flex items-center gap-2"
+            className="absolute -top-4 -left-4 glass rounded-2xl px-4 py-2 shadow-card flex items-center gap-2 z-10"
           >
             <Heart size={14} className="text-rose-500 fill-rose-500" />
             <span className="text-warm-700 text-sm font-medium">Made with love</span>
@@ -129,7 +129,7 @@ function Hero({ featuredImage }) {
           <motion.div
             animate={{ y: [0, 8, 0] }}
             transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-            className="absolute -bottom-4 -right-4 glass rounded-2xl px-4 py-2 shadow-card hidden sm:flex items-center gap-2"
+            className="absolute -bottom-4 -right-4 glass rounded-2xl px-4 py-2 shadow-card flex items-center gap-2 z-10"
           >
             <Star size={14} className="text-rose-400 fill-rose-300" />
             <span className="text-warm-700 text-sm font-medium">Our story</span>
