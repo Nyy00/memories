@@ -66,11 +66,31 @@ export default {
         }
       },
       animation: {
+        /* Existing */
         'fade-in': 'fadeIn 0.6s ease-out forwards',
         'slide-up': 'slideUp 0.6s ease-out forwards',
         'float': 'float 6s ease-in-out infinite',
         'pulse-soft': 'pulseSoft 3s ease-in-out infinite',
         'shimmer': 'shimmer 2s linear infinite',
+        /* New */
+        'gradient-shift': 'gradientShift 6s ease infinite',
+        'gradient-border': 'gradientBorder 4s ease infinite',
+        'orb': 'orbPulse 12s ease-in-out infinite',
+        'orb-2': 'orbPulse2 15s ease-in-out infinite',
+        'float-reverse': 'floatReverse 7s ease-in-out infinite',
+        'ripple': 'ripple 1.5s ease-out infinite',
+        'morph': 'morphBlob 10s ease-in-out infinite',
+        'twinkle': 'twinkle 2s ease-in-out infinite',
+        'eq-1': 'equalizer1 0.8s ease-in-out infinite',
+        'eq-2': 'equalizer2 0.7s ease-in-out 0.1s infinite',
+        'eq-3': 'equalizer3 0.9s ease-in-out 0.2s infinite',
+        'fade-in-up': 'fadeInUp 0.7s ease-out forwards',
+        'fade-in-scale': 'fadeInScale 0.6s ease-out forwards',
+        'slide-in-left': 'slideInLeft 0.6s ease-out forwards',
+        'slide-in-right': 'slideInRight 0.6s ease-out forwards',
+        'heartbeat': 'heartbeat 1.5s ease-in-out infinite',
+        'draw-line': 'drawLine 1.5s ease-out forwards',
+        'spin-slow': 'spin 8s linear infinite',
       },
       keyframes: {
         fadeIn: {
@@ -82,8 +102,14 @@ export default {
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         float: {
-          '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-12px)' },
+          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+          '33%': { transform: 'translateY(-14px) rotate(2deg)' },
+          '66%': { transform: 'translateY(-6px) rotate(-1deg)' },
+        },
+        floatReverse: {
+          '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+          '33%': { transform: 'translateY(10px) rotate(-2deg)' },
+          '66%': { transform: 'translateY(4px) rotate(1deg)' },
         },
         pulseSoft: {
           '0%, 100%': { opacity: '1' },
@@ -93,10 +119,89 @@ export default {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        gradientShift: {
+          '0%': { backgroundPosition: '0% center' },
+          '50%': { backgroundPosition: '100% center' },
+          '100%': { backgroundPosition: '0% center' },
+        },
+        gradientBorder: {
+          '0%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+          '100%': { backgroundPosition: '0% 50%' },
+        },
+        orbPulse: {
+          '0%, 100%': { transform: 'scale(1) translate(0, 0)', opacity: '0.4' },
+          '25%': { transform: 'scale(1.15) translate(20px, -15px)', opacity: '0.6' },
+          '50%': { transform: 'scale(0.9) translate(-10px, 20px)', opacity: '0.35' },
+          '75%': { transform: 'scale(1.1) translate(15px, 10px)', opacity: '0.55' },
+        },
+        orbPulse2: {
+          '0%, 100%': { transform: 'scale(1) translate(0, 0)', opacity: '0.35' },
+          '25%': { transform: 'scale(0.9) translate(-20px, 10px)', opacity: '0.5' },
+          '50%': { transform: 'scale(1.2) translate(10px, -20px)', opacity: '0.4' },
+          '75%': { transform: 'scale(0.95) translate(-15px, -5px)', opacity: '0.45' },
+        },
+        ripple: {
+          '0%': { transform: 'scale(1)', opacity: '0.6' },
+          '100%': { transform: 'scale(2.5)', opacity: '0' },
+        },
+        morphBlob: {
+          '0%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+          '33%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' },
+          '66%': { borderRadius: '50% 60% 30% 60% / 40% 30% 70% 60%' },
+          '100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+        },
+        twinkle: {
+          '0%, 100%': { opacity: '0.2', transform: 'scale(0.8)' },
+          '50%': { opacity: '1', transform: 'scale(1.2)' },
+        },
+        equalizer1: {
+          '0%, 100%': { height: '6px' },
+          '50%': { height: '18px' },
+        },
+        equalizer2: {
+          '0%, 100%': { height: '14px' },
+          '25%': { height: '6px' },
+          '75%': { height: '20px' },
+        },
+        equalizer3: {
+          '0%, 100%': { height: '10px' },
+          '40%': { height: '22px' },
+          '80%': { height: '6px' },
+        },
+        fadeInUp: {
+          'from': { opacity: '0', transform: 'translateY(30px)' },
+          'to': { opacity: '1', transform: 'translateY(0)' },
+        },
+        fadeInScale: {
+          'from': { opacity: '0', transform: 'scale(0.95)' },
+          'to': { opacity: '1', transform: 'scale(1)' },
+        },
+        slideInLeft: {
+          'from': { opacity: '0', transform: 'translateX(-30px)' },
+          'to': { opacity: '1', transform: 'translateX(0)' },
+        },
+        slideInRight: {
+          'from': { opacity: '0', transform: 'translateX(30px)' },
+          'to': { opacity: '1', transform: 'translateX(0)' },
+        },
+        heartbeat: {
+          '0%, 100%': { transform: 'scale(1)' },
+          '14%': { transform: 'scale(1.3)' },
+          '28%': { transform: 'scale(1)' },
+          '42%': { transform: 'scale(1.3)' },
+          '70%': { transform: 'scale(1)' },
+        },
+        drawLine: {
+          'from': { strokeDashoffset: '1000' },
+          'to': { strokeDashoffset: '0' },
+        },
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'shimmer-gradient': 'linear-gradient(90deg, #f5f5f4 25%, #e7e5e4 50%, #f5f5f4 75%)',
+        'gradient-conic': 'conic-gradient(var(--tw-gradient-stops))',
+        'rose-glow': 'radial-gradient(ellipse at center, rgba(244,63,94,0.15) 0%, transparent 70%)',
       },
       boxShadow: {
         'soft': '0 2px 20px rgba(0,0,0,0.06)',
@@ -104,11 +209,30 @@ export default {
         'hover': '0 8px 40px rgba(0,0,0,0.12)',
         'rose': '0 8px 32px rgba(244, 63, 94, 0.2)',
         'glow': '0 0 40px rgba(244, 63, 94, 0.15)',
+        'glow-lg': '0 0 60px rgba(244, 63, 94, 0.2), 0 0 100px rgba(192, 132, 252, 0.1)',
+        'inner-glow': 'inset 0 0 30px rgba(244, 63, 94, 0.06)',
+        'card-colored': '0 4px 24px rgba(244, 63, 94, 0.12)',
       },
       borderRadius: {
         '2xl': '1rem',
         '3xl': '1.5rem',
         '4xl': '2rem',
+      },
+      transitionTimingFunction: {
+        'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        'smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
+      transitionDuration: {
+        '400': '400ms',
+        '600': '600ms',
+        '800': '800ms',
+      },
+      backdropBlur: {
+        'xs': '2px',
+      },
+      scale: {
+        '102': '1.02',
+        '103': '1.03',
       },
     },
   },
