@@ -73,11 +73,17 @@ export async function getMemoryById(id) {
     return { data: memory || null, images, error: memory ? null : new Error('Not found') }
   }
 
-  const { data: memory, error } = await supabase
-    .from('memories')
-    .select('*')
-    .or(`id.eq.${id},slug.eq.${id}`)
-    .single()
+  // Cek apakah 'id' adalah format UUID atau Slug biasa
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+  
+  let query = supabase.from('memories').select('*')
+  if (isUuid) {
+    query = query.eq('id', id)
+  } else {
+    query = query.eq('slug', id)
+  }
+
+  const { data: memory, error } = await query.single()
 
   if (error) return { data: null, images: [], error }
 

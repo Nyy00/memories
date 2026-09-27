@@ -508,11 +508,31 @@ function TimelineTab({ toast }) {
     } catch (e) { toast(e.message, 'error') }
   }
 
+  const handleSeedDummy = async () => {
+    const dummies = [
+      { emoji: '💫', title: 'We First Met', description: 'Awal dari semuanya — sebuah pertemuan yang tidak disengaja.', event_date: '2022-11-20' },
+      { emoji: '☕', title: 'Our First Date', description: 'Pertama kali kita menghabiskan waktu berdua.', event_date: '2023-02-14' },
+      { emoji: '❤️', title: 'We Became Official', description: 'Hari ketika kita memutuskan untuk tidak lagi hanya berteman.', event_date: '2023-06-01' }
+    ]
+    try {
+      for (const d of dummies) await createTimelineEvent(d)
+      toast('Dummy data added! ✓')
+      load()
+    } catch (e) {
+      toast(e.message, 'error')
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl text-warm-800">Timeline ({events.length})</h2>
-        <button onClick={openNew} className="btn-primary"><Plus size={16} /> Add Event</button>
+        <div className="flex gap-2">
+          {events.length === 0 && (
+            <button onClick={handleSeedDummy} className="btn-secondary">Load Dummy</button>
+          )}
+          <button onClick={openNew} className="btn-primary"><Plus size={16} /> Add Event</button>
+        </div>
       </div>
 
       <AnimatePresence>
