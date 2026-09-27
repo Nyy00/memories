@@ -110,8 +110,8 @@ function Hero({ featuredImage }) {
             <div className="absolute inset-0 bg-gradient-to-t from-warm-900/40 to-transparent" />
             <div className="absolute bottom-6 left-6 right-6">
               <div className="glass rounded-2xl px-4 py-3">
-                <p className="text-warm-800 text-sm font-medium">Welcome To Our Gallery</p>
-                <p className="text-warm-500 text-xs mt-0.5">Dony & Jemila</p>
+                <p className="text-warm-800 text-sm font-medium">Our First Date</p>
+                <p className="text-warm-500 text-xs mt-0.5">14 February 2023 · Bandung</p>
               </div>
             </div>
           </div>

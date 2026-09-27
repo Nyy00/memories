@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
+import MusicPlayer from './components/MusicPlayer'
 import Home from './pages/Home'
 import Memories from './pages/Memories'
 import MemoryDetail from './pages/MemoryDetail'
@@ -60,7 +61,12 @@ function AppLayout() {
       <main className="flex-1">
         <AnimatedRoutes />
       </main>
-      {!isAdmin && <Footer />}
+      {!isAdmin && (
+        <>
+          <MusicPlayer />
+          <Footer />
+        </>
+      )}
     </div>
   )
 }
