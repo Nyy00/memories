@@ -6,6 +6,7 @@ import MemoryCard from '../components/MemoryCard'
 import QuoteCard from '../components/QuoteCard'
 import { MemoryCardSkeleton } from '../components/Skeleton'
 import ErrorState from '../components/ErrorState'
+import FloatingHearts from '../components/FloatingHearts'
 import {
   getFeaturedMemories,
   getLatestMemories,
@@ -52,6 +53,9 @@ function Hero({ featuredImage }) {
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-rose-50 via-warm-50 to-lavender-50" />
+
+      {/* Animated floating hearts */}
+      <FloatingHearts count={16} />
 
       {/* Decorative circles */}
       <div className="absolute top-20 right-10 w-72 h-72 rounded-full bg-rose-100/40 blur-3xl" />
@@ -164,6 +168,37 @@ function Hero({ featuredImage }) {
             <Star size={14} className="text-rose-400 fill-rose-300" />
             <span className="text-warm-700 text-sm font-medium">Our story</span>
           </motion.div>
+
+          {/* Micro animated hearts floating around the photo */}
+          {[
+            { top: '-18px', right: '28px', size: 18, delay: 0, dur: 3.2, rot: 15 },
+            { bottom: '80px', left: '-22px', size: 22, delay: 0.8, dur: 4, rot: -20 },
+            { top: '35%', right: '-24px', size: 16, delay: 1.4, dur: 3.6, rot: 12 },
+            { bottom: '-12px', left: '20%', size: 14, delay: 0.4, dur: 3.8, rot: -10 },
+          ].map((item, idx) => (
+            <motion.div
+              key={idx}
+              className="absolute pointer-events-none z-10"
+              style={{ top: item.top, right: item.right, bottom: item.bottom, left: item.left }}
+              animate={{
+                y: [0, -14, 0],
+                rotate: [-item.rot, item.rot, -item.rot],
+                scale: [0.9, 1.15, 0.9],
+                opacity: [0.55, 0.95, 0.55],
+              }}
+              transition={{
+                duration: item.dur,
+                repeat: Infinity,
+                ease: 'easeInOut',
+                delay: item.delay,
+              }}
+            >
+              <Heart
+                size={item.size}
+                className="text-rose-400 fill-rose-300 drop-shadow-sm"
+              />
+            </motion.div>
+          ))}
         </motion.div>
       </div>
 
@@ -347,8 +382,9 @@ function TimelinePreview({ events }) {
 
 function LoveNotePreview({ quote }) {
   return (
-    <section className="py-20 bg-gradient-to-br from-rose-50 to-lavender-50">
-      <div className="page-container max-w-3xl">
+    <section className="relative py-20 bg-gradient-to-br from-rose-50 to-lavender-50 overflow-hidden">
+      <FloatingHearts count={8} />
+      <div className="page-container max-w-3xl relative">
         <div className="text-center mb-10">
           <Heart size={28} className="text-rose-400 fill-rose-300 mx-auto mb-4 animate-heartbeat" />
           <h2 className="section-title">A Note for You</h2>

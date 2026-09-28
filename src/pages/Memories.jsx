@@ -5,6 +5,7 @@ import MemoryCard from '../components/MemoryCard'
 import { MemoryCardSkeleton } from '../components/Skeleton'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
+import FloatingHearts from '../components/FloatingHearts'
 import { getMemories } from '../services/memoryService'
 
 const TYPES = [
@@ -75,6 +76,9 @@ export default function Memories() {
           transition={{ duration: 7, repeat: Infinity }}
           style={{ filter: 'blur(40px)' }}
         />
+
+        {/* Floating hearts */}
+        <FloatingHearts count={10} />
 
         <div className="page-container py-14 text-center relative">
           <motion.div

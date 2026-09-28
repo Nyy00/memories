@@ -4,6 +4,7 @@ import { Images, Sparkles, Play } from 'lucide-react'
 import ImageLightbox from '../components/ImageLightbox'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
+import FloatingHearts from '../components/FloatingHearts'
 import { useFetch } from '../hooks/useMemory'
 import { getGalleryImages } from '../services/memoryService'
 
@@ -65,6 +66,9 @@ export default function Gallery() {
           transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
           style={{ filter: 'blur(40px)' }}
         />
+
+        {/* Floating hearts */}
+        <FloatingHearts count={10} />
 
         <div className="page-container py-16 text-center relative">
           <motion.div

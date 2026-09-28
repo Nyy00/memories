@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Video as VideoIcon, Play, Calendar, MapPin, X, Sparkles } from 'lucide-react'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
+import FloatingHearts from '../components/FloatingHearts'
 import { useFetch } from '../hooks/useMemory'
 import { getVideos } from '../services/memoryService'
 
@@ -221,6 +222,9 @@ export default function Videos() {
             transition={{ duration: 6, repeat: Infinity }}
             style={{ filter: 'blur(40px)' }}
           />
+
+          {/* Floating hearts */}
+          <FloatingHearts count={10} />
 
           <div className="page-container py-16 text-center relative">
             <motion.div
