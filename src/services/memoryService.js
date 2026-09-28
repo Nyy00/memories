@@ -254,7 +254,7 @@ export async function getGalleryImages() {
     return {
       id: `img-${e.id}`,
       url: e.image_url,
-      thumb: e.image_url,
+      thumb: isVideo ? null : e.image_url, // Jika video, kosongkan thumb agar gallery pakai tag <video>
       caption: e.caption || mem.title || '',
       date: mem.memory_date || null,
       location: mem.location || '',
