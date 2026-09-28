@@ -26,15 +26,19 @@ export default function Gallery() {
   const fetcher = useCallback(() => getGalleryImages(), [])
   const { data: images, loading, error, refetch } = useFetch(fetcher)
 
-  const normalizedImages = (images || []).map((img) => ({
-    id: img.id,
-    url: img.url || img.image_url,           // video_url untuk video, cover_image untuk foto
-    thumb: img.thumb || img.url || img.image_url, // selalu cover_image untuk thumbnail grid
-    caption: img.caption,
-    date: img.date || img.created_at,
-    location: img.location || img.memories?.location,
-    type: img.type || 'photo',
-  }))
+  const normalizedImages = (images || []).map((img) => {
+    const isVideo = img.type === 'video'
+    return {
+      id: img.id,
+      url: img.url || img.image_url,
+      // Jika video, jangan pernah fallback ke url (karena url adalah link mp4)
+      thumb: isVideo ? (img.thumb || null) : (img.thumb || img.url || img.image_url),
+      caption: img.caption,
+      date: img.date || img.created_at,
+      location: img.location || img.memories?.location,
+      type: img.type || 'photo',
+    }
+  })
 
   return (
     <div className="pt-20 pb-24 min-h-screen">

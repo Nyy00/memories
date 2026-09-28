@@ -87,8 +87,15 @@ export default function MemoryDetail() {
 
   // Combine cover + gallery for lightbox
   const allImages = [
-    ...(memory.cover_image ? [{ id: 'cover', url: memory.cover_image, caption: memory.title, date: memory.memory_date, location: memory.location }] : []),
-    ...images.map((img) => ({ id: img.id, url: img.image_url, caption: img.caption, date: memory.memory_date, location: memory.location })),
+    ...(memory.cover_image ? [{ id: 'cover', url: memory.cover_image, caption: memory.title, date: memory.memory_date, location: memory.location, type: memory.type === 'video' && memory.video_url ? 'photo' : memory.type }] : []),
+    ...images.map((img) => ({ 
+      id: img.id, 
+      url: img.image_url, 
+      caption: img.caption, 
+      date: memory.memory_date, 
+      location: memory.location,
+      type: img.type || 'photo'
+    })),
   ]
 
   return (
@@ -253,14 +260,33 @@ export default function MemoryDetail() {
                     className="relative overflow-hidden rounded-2xl aspect-square bg-warm-100 cursor-pointer group"
                     onClick={() => setLightboxIdx(i + (memory.cover_image ? 1 : 0))}
                   >
-                    <img
-                      src={img.image_url}
-                      alt={img.caption || `Gallery ${i + 1}`}
-                      className="w-full h-full object-cover transition-transform duration-400 group-hover:scale-110"
-                      loading="lazy"
-                    />
+                    {/* Render video atau foto berdasarkan tipe */}
+                    {img.type === 'video' ? (
+                      <video
+                        src={img.image_url}
+                        className="w-full h-full object-cover"
+                        muted
+                        preload="metadata"
+                        playsInline
+                      />
+                    ) : (
+                      <img
+                        src={img.image_url}
+                        alt={img.caption || `Gallery ${i + 1}`}
+                        className="w-full h-full object-cover transition-transform duration-400 group-hover:scale-110"
+                        loading="lazy"
+                      />
+                    )}
+                    
+                    {/* Overlay Icon: Play untuk video, Image untuk foto */}
                     <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                      <Image size={24} className="text-white" />
+                      {img.type === 'video' ? (
+                        <div className="w-12 h-12 rounded-full bg-black/50 flex items-center justify-center border border-white/30">
+                          <div className="w-0 h-0 border-y-8 border-y-transparent border-l-[14px] border-l-white ml-1"></div>
+                        </div>
+                      ) : (
+                        <Image size={24} className="text-white" />
+                      )}
                     </div>
                     {img.caption && (
                       <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/50">
