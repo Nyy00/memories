@@ -188,10 +188,10 @@ export async function getGalleryImages() {
     return { data: seedGalleryImages, error: null }
   }
   
-  // Ambil gambar dari memories (cover_image)
+  // Ambil semua memories yang punya cover_image (foto & video)
   const { data: memoriesData, error: memError } = await supabase
     .from('memories')
-    .select('id, cover_image, title, memory_date, location')
+    .select('id, cover_image, title, memory_date, location, type')
     .not('cover_image', 'is', null)
     .neq('cover_image', '')
 
@@ -213,14 +213,16 @@ export async function getGalleryImages() {
       url: m.cover_image,
       caption: m.title,
       date: m.memory_date,
-      location: m.location
+      location: m.location,
+      type: m.type, // 'photo' | 'video'
     })),
     ...timelineData.map(t => ({
       id: `time-${t.id}`,
       url: t.image_url,
       caption: t.title,
       date: t.event_date,
-      location: ''
+      location: '',
+      type: 'photo',
     }))
   ]
 

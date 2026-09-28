@@ -588,7 +588,11 @@ function TimelineTab({ toast }) {
             <span className="text-2xl">{ev.emoji}</span>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-warm-800">{ev.title}</p>
-              <p className="text-xs text-warm-400">{ev.event_date}</p>
+              <p className="text-xs text-warm-400">
+                {ev.event_date
+                  ? new Date(ev.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+                  : '—'}
+              </p>
             </div>
             <button onClick={() => openEdit(ev)} className="p-2 rounded-xl text-warm-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"><Edit2 size={16} /></button>
             <button onClick={() => setDeleteTarget(ev)} className="p-2 rounded-xl text-warm-400 hover:text-red-500 hover:bg-red-50 transition-colors"><Trash2 size={16} /></button>

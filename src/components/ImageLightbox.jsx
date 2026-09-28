@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, ChevronRight, Calendar, MapPin } from 'lucide-react'
+import { X, ChevronLeft, ChevronRight, Calendar, MapPin, Play } from 'lucide-react'
 
 export default function ImageLightbox({ images, currentIndex, onClose, onPrev, onNext }) {
   const current = images[currentIndex]
@@ -69,11 +69,23 @@ export default function ImageLightbox({ images, currentIndex, onClose, onPrev, o
           className="relative max-w-[90vw] max-h-[85vh] flex flex-col items-center gap-4"
           onClick={(e) => e.stopPropagation()}
         >
-          <img
-            src={current.url || current.image_url}
-            alt={current.caption || 'Memory'}
-            className="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl"
-          />
+          {current.type === 'video' ? (
+            <video
+              src={current.url || current.image_url}
+              controls
+              autoPlay
+              className="max-w-full max-h-[75vh] rounded-2xl shadow-2xl"
+              poster={current.thumb}
+            >
+              Your browser does not support video playback.
+            </video>
+          ) : (
+            <img
+              src={current.url || current.image_url}
+              alt={current.caption || 'Memory'}
+              className="max-w-full max-h-[75vh] object-contain rounded-2xl shadow-2xl"
+            />
+          )}
 
           {/* Caption area */}
           {(current.caption || current.date || current.location) && (

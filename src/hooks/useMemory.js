@@ -46,7 +46,7 @@ export function useIntersectionObserver(ref, options = {}) {
 
     const current = ref.current
     if (current) observer.observe(current)
-    return () => current && observer.unobserve(current)
+    return () => observer.disconnect()
   }, [ref, options])
 
   return isVisible

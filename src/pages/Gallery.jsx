@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Images, Sparkles } from 'lucide-react'
+import { Images, Sparkles, Play } from 'lucide-react'
 import ImageLightbox from '../components/ImageLightbox'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
@@ -31,6 +31,7 @@ export default function Gallery() {
     caption: img.caption,
     date: img.date || img.created_at,
     location: img.location || img.memories?.location,
+    type: img.type || 'photo',
   }))
 
   return (
@@ -127,6 +128,15 @@ export default function Gallery() {
                     className="w-full object-cover block transition-transform duration-700 group-hover:scale-110"
                     loading="lazy"
                   />
+
+                  {/* Video play overlay */}
+                  {img.type === 'video' && (
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="w-12 h-12 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center border border-white/30">
+                        <Play size={20} className="text-white fill-white ml-1" />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Gradient overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-400 flex flex-col justify-end p-4">
