@@ -75,7 +75,7 @@ export async function getMemoryById(id) {
 
   // Cek apakah 'id' adalah format UUID atau Slug biasa
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
-  
+
   let query = supabase.from('memories').select('*')
   if (isUuid) {
     query = query.eq('id', id)
@@ -187,15 +187,28 @@ export async function getGalleryImages() {
   if (!isSupabaseConfigured) {
     return { data: seedGalleryImages, error: null }
   }
-  
-  // Ambil semua memories yang punya cover_image (foto & video)
+
+  // Ambil semua memories (untuk cover + metadata)
   const { data: memoriesData, error: memError } = await supabase
     .from('memories')
-    .select('id, cover_image, video_url, title, memory_date, location, type')
+    .select('id, cover_image, video_url, title, memory_date, location, type, slug')
     .not('cover_image', 'is', null)
     .neq('cover_image', '')
 
   if (memError) return { data: [], error: memError }
+
+  // Ambil semua foto/video ekstra dari memory_images
+  const { data: extraMedia, error: extraError } = await supabase
+    .from('memory_images')
+    .select('id, memory_id, image_url, caption, sort_order, type')
+    .order('sort_order')
+
+  if (extraError) return { data: [], error: extraError }
+
+  // Buat map memory_id → metadata memory (untuk caption & date di galeri)
+  const memoryMap = Object.fromEntries(
+    (memoriesData || []).map(m => [m.id, m])
+  )
 
   // Ambil gambar dari timeline (image_url)
   const { data: timelineData, error: timeError } = await supabase
@@ -206,30 +219,57 @@ export async function getGalleryImages() {
 
   if (timeError) return { data: [], error: timeError }
 
-  // Gabungkan dan format data
-  const combined = [
-    ...memoriesData.map(m => ({
-      id: `mem-${m.id}`,
-      // Untuk video: url = video_url (agar bisa diputar di lightbox)
-      // Untuk foto:  url = cover_image
-      url: m.type === 'video' && m.video_url ? m.video_url : m.cover_image,
-      thumb: m.cover_image,    // selalu pakai cover_image sebagai thumbnail grid
-      caption: m.title,
-      date: m.memory_date,
-      location: m.location,
-      type: m.type, // 'photo' | 'video'
-    })),
-    ...timelineData.map(t => ({
-      id: `time-${t.id}`,
-      url: t.image_url,
-      caption: t.title,
-      date: t.event_date,
-      location: '',
-      type: 'photo',
-    }))
-  ]
+  // Kumpulkan ID memories yang sudah punya foto ekstra
+  // agar cover_image tidak double jika ada extra media
+  const memoriesWithExtras = new Set((extraMedia || []).map(e => e.memory_id))
 
-  // Urutkan terbaru ke terlama
+  // Cover images dari memories (hanya yang TIDAK punya ekstra, atau tetap tampilkan cover)
+  // Keputusan: cover selalu masuk galeri sebagai item pertama dari tiap memory
+  const coverItems = (memoriesData || []).map(m => ({
+    id: `mem-${m.id}`,
+    url: m.type === 'video' && m.video_url ? m.video_url : m.cover_image,
+    thumb: m.cover_image,
+    caption: m.title,
+    date: m.memory_date,
+    location: m.location,
+    type: m.type === 'video' ? 'video' : 'photo',
+    memory_id: m.id,
+    memory_slug: m.slug,
+    is_cover: true,
+  }))
+
+  // Foto/video ekstra dari memory_images
+  const extraItems = (extraMedia || []).map(e => {
+    const mem = memoryMap[e.memory_id] || {}
+    const isVideo = e.type === 'video'
+    return {
+      id: `img-${e.id}`,
+      url: e.image_url,
+      thumb: e.image_url,
+      caption: e.caption || mem.title || '',
+      date: mem.memory_date || null,
+      location: mem.location || '',
+      type: isVideo ? 'video' : 'photo',
+      memory_id: e.memory_id,
+      memory_slug: mem.slug || null,
+      is_cover: false,
+    }
+  })
+
+  // Item dari timeline
+  const timelineItems = (timelineData || []).map(t => ({
+    id: `time-${t.id}`,
+    url: t.image_url,
+    thumb: t.image_url,
+    caption: t.title,
+    date: t.event_date,
+    location: '',
+    type: 'photo',
+    is_cover: false,
+  }))
+
+  // Gabung semua dan urutkan terbaru ke terlama
+  const combined = [...coverItems, ...extraItems, ...timelineItems]
   combined.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0))
 
   return { data: combined, error: null }

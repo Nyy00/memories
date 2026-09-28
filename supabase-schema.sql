@@ -45,8 +45,12 @@ create table if not exists public.memory_images (
   image_url   text not null,
   caption     text,
   sort_order  integer not null default 0,
+  type        text not null default 'photo' check (type in ('photo', 'video')),
   created_at  timestamptz not null default now()
 );
+
+-- Jika tabel memory_images sudah ada, jalankan ALTER ini untuk menambah kolom type:
+-- alter table public.memory_images add column if not exists type text not null default 'photo' check (type in ('photo', 'video'));
 
 -- ─── Table: quotes ───────────────────────────────────────────
 

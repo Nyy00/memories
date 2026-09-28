@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   Plus, Edit2, Trash2, Upload, Save, X, Check, AlertTriangle,
   Image, Video, BookOpen, Heart, Clock, Quote, ChevronDown,
-  Home, ArrowLeft, Eye, Star, LogOut, Lock
+  Home, ArrowLeft, Eye, Star, LogOut, Lock, Images, Play,
+  GripVertical, ImagePlus
 } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
 import {
@@ -12,7 +13,8 @@ import {
   createMemory, updateMemory, deleteMemory,
   createTimelineEvent, updateTimelineEvent, deleteTimelineEvent,
   createQuote, deleteQuote,
-  uploadFile, adminLogin, adminLogout, checkSession
+  uploadFile, adminLogin, adminLogout, checkSession,
+  getMemoryImages, addMemoryImages, deleteMemoryImage,
 } from '../services/adminService'
 
 // ─── Helpers ─────────────────────────────────────────────────
@@ -78,7 +80,7 @@ function ConfirmDialog({ message, onConfirm, onCancel }) {
   )
 }
 
-// ─── Image Uploader ───────────────────────────────────────────
+// ─── Image Uploader (single) ──────────────────────────────────
 
 function ImageUploader({ onUploaded, label = 'Upload Image', folder = 'photos' }) {
   const [uploading, setUploading] = useState(false)
@@ -133,6 +135,238 @@ function ImageUploader({ onUploaded, label = 'Upload Image', folder = 'photos' }
   )
 }
 
+// ─── Media Gallery Section (multi-upload) ────────────────────
+
+function MediaGallerySection({ memoryId, toast }) {
+  const [mediaItems, setMediaItems] = useState([])
+  const [loading, setLoading]       = useState(true)
+  const [uploading, setUploading]   = useState(false)
+  const [uploadProgress, setUploadProgress] = useState({ done: 0, total: 0 })
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const inputRef = useRef()
+
+  const loadMedia = useCallback(async () => {
+    if (!memoryId) return
+    setLoading(true)
+    try {
+      const items = await getMemoryImages(memoryId)
+      setMediaItems(items)
+    } catch (e) {
+      toast('Gagal memuat media: ' + e.message, 'error')
+    } finally {
+      setLoading(false)
+    }
+  }, [memoryId, toast])
+
+  useEffect(() => { loadMedia() }, [loadMedia])
+
+  const handleFilesSelected = async (files) => {
+    if (!files || files.length === 0) return
+    setUploading(true)
+    setUploadProgress({ done: 0, total: files.length })
+    try {
+      await addMemoryImages(memoryId, Array.from(files), (done, total) => {
+        setUploadProgress({ done, total })
+      })
+      toast(`${files.length} file berhasil diupload ✓`)
+      await loadMedia()
+    } catch (e) {
+      toast('Upload gagal: ' + e.message, 'error')
+    } finally {
+      setUploading(false)
+      setUploadProgress({ done: 0, total: 0 })
+      // Reset input supaya file yang sama bisa dipilih lagi
+      if (inputRef.current) inputRef.current.value = ''
+    }
+  }
+
+  const handleDelete = async () => {
+    try {
+      await deleteMemoryImage(deleteTarget.id)
+      toast('Media dihapus')
+      setDeleteTarget(null)
+      await loadMedia()
+    } catch (e) {
+      toast('Hapus gagal: ' + e.message, 'error')
+    }
+  }
+
+  return (
+    <div className="mt-6 pt-6 border-t border-warm-100">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Images size={16} className="text-rose-400" />
+          <span className="text-sm font-medium text-warm-700">
+            Galeri Media
+            {mediaItems.length > 0 && (
+              <span className="ml-2 px-2 py-0.5 bg-rose-50 text-rose-500 rounded-full text-xs font-semibold">
+                {mediaItems.length} file
+              </span>
+            )}
+          </span>
+        </div>
+
+        {/* Tombol tambah file */}
+        <button
+          type="button"
+          onClick={() => inputRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 text-rose-500 hover:bg-rose-100 text-xs font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <ImagePlus size={14} />
+          Tambah Foto/Video
+        </button>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*,video/*"
+          multiple
+          className="hidden"
+          onChange={e => handleFilesSelected(e.target.files)}
+        />
+      </div>
+
+      {/* Progress bar saat upload */}
+      <AnimatePresence>
+        {uploading && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-4 overflow-hidden"
+          >
+            <div className="bg-rose-50 rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-rose-600 font-medium">
+                  Mengupload... {uploadProgress.done}/{uploadProgress.total}
+                </span>
+                <span className="text-xs text-rose-400">
+                  {uploadProgress.total > 0
+                    ? Math.round((uploadProgress.done / uploadProgress.total) * 100)
+                    : 0}%
+                </span>
+              </div>
+              <div className="h-2 bg-rose-200 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-rose-500 rounded-full"
+                  animate={{
+                    width: uploadProgress.total > 0
+                      ? `${(uploadProgress.done / uploadProgress.total) * 100}%`
+                      : '0%'
+                  }}
+                  transition={{ ease: 'easeOut' }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Drop zone (saat belum ada media) */}
+      {!loading && mediaItems.length === 0 && !uploading && (
+        <div
+          className="border-2 border-dashed border-warm-200 rounded-2xl p-8 text-center cursor-pointer hover:border-rose-300 transition-colors"
+          onClick={() => inputRef.current?.click()}
+          onDragOver={e => e.preventDefault()}
+          onDrop={e => {
+            e.preventDefault()
+            handleFilesSelected(e.dataTransfer.files)
+          }}
+        >
+          <ImagePlus size={28} className="mx-auto mb-2 text-warm-300" />
+          <p className="text-sm text-warm-400">Klik atau drag foto/video ke sini</p>
+          <p className="text-xs text-warm-300 mt-1">Bisa pilih banyak sekaligus</p>
+        </div>
+      )}
+
+      {/* Loading skeleton */}
+      {loading && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="skeleton aspect-square rounded-xl" />
+          ))}
+        </div>
+      )}
+
+      {/* Grid media */}
+      {!loading && mediaItems.length > 0 && (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+          {mediaItems.map((item, i) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: i * 0.03 }}
+              className="relative group aspect-square rounded-xl overflow-hidden bg-warm-100"
+            >
+              {/* Thumbnail */}
+              {item.type === 'video' ? (
+                <div className="w-full h-full flex items-center justify-center bg-warm-800">
+                  <video
+                    src={item.image_url}
+                    className="w-full h-full object-cover"
+                    muted
+                    preload="metadata"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-black/60 flex items-center justify-center">
+                      <Play size={14} className="text-white fill-white ml-0.5" />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <img
+                  src={item.image_url}
+                  alt={item.caption || `Media ${i + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
+              )}
+
+              {/* Sort order badge */}
+              <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/50 text-white text-[10px] flex items-center justify-center font-bold">
+                {i + 1}
+              </div>
+
+              {/* Delete overlay */}
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(item)}
+                  className="w-8 h-8 rounded-full bg-red-500 flex items-center justify-center hover:bg-red-600 transition-colors"
+                  title="Hapus"
+                >
+                  <Trash2 size={13} className="text-white" />
+                </button>
+              </div>
+            </motion.div>
+          ))}
+
+          {/* Tombol tambah di dalam grid */}
+          <div
+            className="aspect-square rounded-xl border-2 border-dashed border-warm-200 flex items-center justify-center cursor-pointer hover:border-rose-300 transition-colors"
+            onClick={() => inputRef.current?.click()}
+          >
+            <Plus size={20} className="text-warm-300" />
+          </div>
+        </div>
+      )}
+
+      {/* Confirm delete dialog */}
+      <AnimatePresence>
+        {deleteTarget && (
+          <ConfirmDialog
+            message="Hapus foto/video ini dari galeri?"
+            onConfirm={handleDelete}
+            onCancel={() => setDeleteTarget(null)}
+          />
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ─── Memory Form ─────────────────────────────────────────────
 
 const emptyMemory = {
@@ -141,9 +375,11 @@ const emptyMemory = {
   cover_image: '', video_url: '', is_featured: false
 }
 
-function MemoryForm({ initial = null, onSave, onCancel }) {
-  const [form, setForm] = useState(initial || emptyMemory)
-  const [saving, setSaving] = useState(false)
+function MemoryForm({ initial = null, onSave, onCancel, toast }) {
+  const [form, setForm]       = useState(initial || emptyMemory)
+  const [saving, setSaving]   = useState(false)
+  // savedMemory: memory yang sudah tersimpan di DB (untuk section multi-upload)
+  const [savedMemory, setSavedMemory] = useState(initial || null)
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
@@ -157,162 +393,174 @@ function MemoryForm({ initial = null, onSave, onCancel }) {
     if (!form.title || !form.slug) return alert('Title and slug are required.')
     setSaving(true)
     try {
-      await onSave(form)
+      const saved = await onSave(form)
+      // Jika onSave mengembalikan data memory, simpan untuk dipakai di MediaGallerySection
+      if (saved?.id) setSavedMemory(saved)
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-warm-700 mb-1">Title *</label>
-          <input
-            className="input-field"
-            value={form.title}
-            onChange={e => handleTitleChange(e.target.value)}
-            placeholder="Our First Date"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-warm-700 mb-1">Slug *</label>
-          <input
-            className="input-field"
-            value={form.slug}
-            onChange={e => set('slug', e.target.value)}
-            placeholder="our-first-date"
-            required
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-warm-700 mb-1">Date</label>
-          <input
-            type="date"
-            className="input-field"
-            value={form.memory_date}
-            onChange={e => set('memory_date', e.target.value)}
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-warm-700 mb-1">Location</label>
-          <input
-            className="input-field"
-            value={form.location}
-            onChange={e => set('location', e.target.value)}
-            placeholder="Bandung"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-warm-700 mb-1">Type</label>
-          <select
-            className="input-field"
-            value={form.type}
-            onChange={e => set('type', e.target.value)}
-          >
-            <option value="photo">📷 Photo</option>
-            <option value="video">🎥 Video</option>
-            <option value="story">📖 Story</option>
-          </select>
-        </div>
-        <div className="flex items-end pb-1">
-          <label className="flex items-center gap-2 cursor-pointer">
+    <div className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-warm-700 mb-1">Title *</label>
             <input
-              type="checkbox"
-              checked={form.is_featured}
-              onChange={e => set('is_featured', e.target.checked)}
-              className="w-4 h-4 rounded accent-rose-500"
+              className="input-field"
+              value={form.title}
+              onChange={e => handleTitleChange(e.target.value)}
+              placeholder="Our First Date"
+              required
             />
-            <span className="text-sm font-medium text-warm-700 flex items-center gap-1">
-              <Star size={14} className="text-rose-400" /> Featured on Homepage
-            </span>
-          </label>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-warm-700 mb-1">Slug *</label>
+            <input
+              className="input-field"
+              value={form.slug}
+              onChange={e => set('slug', e.target.value)}
+              placeholder="our-first-date"
+              required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-warm-700 mb-1">Date</label>
+            <input
+              type="date"
+              className="input-field"
+              value={form.memory_date}
+              onChange={e => set('memory_date', e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-warm-700 mb-1">Location</label>
+            <input
+              className="input-field"
+              value={form.location}
+              onChange={e => set('location', e.target.value)}
+              placeholder="Bandung"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-warm-700 mb-1">Type</label>
+            <select
+              className="input-field"
+              value={form.type}
+              onChange={e => set('type', e.target.value)}
+            >
+              <option value="photo">📷 Photo</option>
+              <option value="video">🎥 Video</option>
+              <option value="story">📖 Story</option>
+            </select>
+          </div>
+          <div className="flex items-end pb-1">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.is_featured}
+                onChange={e => set('is_featured', e.target.checked)}
+                className="w-4 h-4 rounded accent-rose-500"
+              />
+              <span className="text-sm font-medium text-warm-700 flex items-center gap-1">
+                <Star size={14} className="text-rose-400" /> Featured on Homepage
+              </span>
+            </label>
+          </div>
         </div>
-      </div>
 
-      <div>
-        <label className="block text-sm font-medium text-warm-700 mb-1">Description</label>
-        <textarea
-          className="input-field min-h-[80px] resize-none"
-          value={form.description}
-          onChange={e => set('description', e.target.value)}
-          placeholder="Ceritakan momen ini..."
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-warm-700 mb-1">Quote / Romantic Caption</label>
-        <textarea
-          className="input-field min-h-[60px] resize-none font-serif italic"
-          value={form.quote}
-          onChange={e => set('quote', e.target.value)}
-          placeholder='"Hari yang sederhana, tapi selalu diingat..."'
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-warm-700 mb-2">Cover Image</label>
-        <div className="space-y-2">
-          {isSupabaseConfigured && (
-            <ImageUploader
-              label="Upload Cover Image"
-              folder="photos"
-              onUploaded={url => set('cover_image', url)}
-            />
-          )}
-          <input
-            className="input-field"
-            value={form.cover_image}
-            onChange={e => set('cover_image', e.target.value)}
-            placeholder="https://... (or paste URL after uploading)"
+        <div>
+          <label className="block text-sm font-medium text-warm-700 mb-1">Description</label>
+          <textarea
+            className="input-field min-h-[80px] resize-none"
+            value={form.description}
+            onChange={e => set('description', e.target.value)}
+            placeholder="Ceritakan momen ini..."
           />
         </div>
-      </div>
 
-      {form.type === 'video' && (
         <div>
-          <label className="block text-sm font-medium text-warm-700 mb-2">Video</label>
+          <label className="block text-sm font-medium text-warm-700 mb-1">Quote / Romantic Caption</label>
+          <textarea
+            className="input-field min-h-[60px] resize-none font-serif italic"
+            value={form.quote}
+            onChange={e => set('quote', e.target.value)}
+            placeholder='"Hari yang sederhana, tapi selalu diingat..."'
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-warm-700 mb-2">Cover Image</label>
           <div className="space-y-2">
             {isSupabaseConfigured && (
               <ImageUploader
-                label="Upload Video"
-                folder="videos"
-                onUploaded={url => set('video_url', url)}
+                label="Upload Cover Image"
+                folder="photos"
+                onUploaded={url => set('cover_image', url)}
               />
             )}
             <input
               className="input-field"
-              value={form.video_url}
-              onChange={e => set('video_url', e.target.value)}
-              placeholder="https://... (video URL)"
+              value={form.cover_image}
+              onChange={e => set('cover_image', e.target.value)}
+              placeholder="https://... (or paste URL after uploading)"
             />
           </div>
         </div>
-      )}
 
-      <div className="flex gap-3 pt-2">
-        <button type="button" onClick={onCancel} className="btn-secondary">
-          <X size={16} /> Cancel
-        </button>
-        <button type="submit" disabled={saving} className="btn-primary">
-          {saving
-            ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            : <Save size={16} />}
-          {initial ? 'Save Changes' : 'Add Memory'}
-        </button>
-      </div>
-    </form>
+        {form.type === 'video' && (
+          <div>
+            <label className="block text-sm font-medium text-warm-700 mb-2">Video</label>
+            <div className="space-y-2">
+              {isSupabaseConfigured && (
+                <ImageUploader
+                  label="Upload Video"
+                  folder="videos"
+                  onUploaded={url => set('video_url', url)}
+                />
+              )}
+              <input
+                className="input-field"
+                value={form.video_url}
+                onChange={e => set('video_url', e.target.value)}
+                placeholder="https://... (video URL)"
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex gap-3 pt-2">
+          <button type="button" onClick={onCancel} className="btn-secondary">
+            <X size={16} /> Cancel
+          </button>
+          <button type="submit" disabled={saving} className="btn-primary">
+            {saving
+              ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              : <Save size={16} />}
+            {initial ? 'Save Changes' : 'Add Memory'}
+          </button>
+        </div>
+      </form>
+
+      {/* ── Multi-upload section — muncul setelah memory tersimpan ── */}
+      {isSupabaseConfigured && savedMemory?.id && (
+        <MediaGallerySection
+          memoryId={savedMemory.id}
+          toast={toast}
+        />
+      )}
+    </div>
   )
 }
 
 // ─── Memories Tab ─────────────────────────────────────────────
 
 function MemoriesTab({ toast }) {
-  const [memories, setMemories] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [memories, setMemories]       = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [showForm, setShowForm]       = useState(false)
+  const [editing, setEditing]         = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const load = useCallback(async () => {
@@ -328,18 +576,29 @@ function MemoriesTab({ toast }) {
 
   useEffect(() => { load() }, [load])
 
+  // handleSave now returns the saved memory so MemoryForm can open MediaGallerySection
   const handleSave = async (form) => {
     try {
+      let saved
       if (editing) {
-        await updateMemory(editing.id, form)
+        saved = await updateMemory(editing.id, form)
         toast('Memory updated ✓')
       } else {
-        await createMemory(form)
-        toast('Memory added ✓')
+        saved = await createMemory(form)
+        toast('Memory added ✓ — tambahkan foto/video di bawah')
       }
-      setShowForm(false)
-      setEditing(null)
-      load()
+      // Tidak tutup form saat baru dibuat supaya bisa langsung upload foto
+      if (editing) {
+        setShowForm(false)
+        setEditing(null)
+        load()
+      } else {
+        // Setelah create: setEditing ke data baru agar MediaGallerySection aktif
+        setEditing(saved)
+        setShowForm(false)
+        load()
+      }
+      return saved
     } catch (e) {
       toast(e.message, 'error')
     }
@@ -385,6 +644,7 @@ function MemoriesTab({ toast }) {
               initial={editing}
               onSave={handleSave}
               onCancel={() => { setShowForm(false); setEditing(null) }}
+              toast={toast}
             />
           </motion.div>
         )}
@@ -472,12 +732,12 @@ function MemoriesTab({ toast }) {
 const emptyEvent = { emoji: '❤️', title: '', description: '', event_date: '', image_url: '' }
 
 function TimelineTab({ toast }) {
-  const [events, setEvents] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [editing, setEditing] = useState(null)
+  const [events, setEvents]           = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [showForm, setShowForm]       = useState(false)
+  const [editing, setEditing]         = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
-  const [form, setForm] = useState(emptyEvent)
+  const [form, setForm]               = useState(emptyEvent)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -488,9 +748,9 @@ function TimelineTab({ toast }) {
 
   useEffect(() => { load() }, [load])
 
-  const openNew = () => { setForm(emptyEvent); setEditing(null); setShowForm(true) }
+  const openNew  = () => { setForm(emptyEvent); setEditing(null); setShowForm(true) }
   const openEdit = (ev) => { setForm(ev); setEditing(ev); setShowForm(true) }
-  const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+  const set      = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
   const handleSave = async () => {
     try {
@@ -616,10 +876,10 @@ function TimelineTab({ toast }) {
 // ─── Quotes Tab ───────────────────────────────────────────────
 
 function QuotesTab({ toast }) {
-  const [quotes, setQuotes] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ text: '', author: '' })
+  const [quotes, setQuotes]           = useState([])
+  const [loading, setLoading]         = useState(true)
+  const [showForm, setShowForm]       = useState(false)
+  const [form, setForm]               = useState({ text: '', author: '' })
   const [deleteTarget, setDeleteTarget] = useState(null)
 
   const load = useCallback(async () => {
@@ -722,13 +982,13 @@ const TABS = [
 ]
 
 export default function Admin() {
-  const [activeTab, setActiveTab] = useState('memories')
-  const [toasts, setToasts] = useState([])
-  const [session, setSession] = useState(null)
+  const [activeTab, setActiveTab]     = useState('memories')
+  const [toasts, setToasts]           = useState([])
+  const [session, setSession]         = useState(null)
   const [loadingAuth, setLoadingAuth] = useState(true)
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loginError, setLoginError] = useState('')
+  const [email, setEmail]             = useState('')
+  const [password, setPassword]       = useState('')
+  const [loginError, setLoginError]   = useState('')
   const [isLoggingIn, setIsLoggingIn] = useState(false)
 
   const toast = useCallback((message, type = 'success') => {
@@ -740,7 +1000,6 @@ export default function Admin() {
     setToasts(t => t.filter(x => x.id !== id))
   }, [])
 
-  // Cek apakah sudah login saat pertama kali halaman dibuka
   useEffect(() => {
     checkSession().then(sess => {
       setSession(sess)
@@ -770,12 +1029,14 @@ export default function Admin() {
 
   // Loading Screen
   if (loadingAuth) {
-    return <div className="min-h-screen flex items-center justify-center bg-warm-50">
-      <div className="w-8 h-8 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin"></div>
-    </div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-warm-50">
+        <div className="w-8 h-8 border-4 border-rose-200 border-t-rose-500 rounded-full animate-spin" />
+      </div>
+    )
   }
 
-  // Halaman Login (Jika belum login)
+  // Halaman Login
   if (!session) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-warm-50 p-4">
@@ -788,7 +1049,7 @@ export default function Admin() {
           </div>
           <h1 className="font-display text-2xl text-warm-800 mb-2">Admin Access</h1>
           <p className="text-warm-400 text-sm mb-6">Silakan login untuk mengedit kenangan.</p>
-          
+
           <form onSubmit={handleLogin} className="space-y-4 text-left">
             <div>
               <label className="block text-sm font-medium text-warm-700 mb-1">Email</label>
@@ -808,7 +1069,7 @@ export default function Admin() {
     )
   }
 
-  // Halaman Admin Utama (Jika sudah login)
+  // Halaman Admin Utama
   return (
     <div className="min-h-screen bg-warm-50 pt-4 pb-20">
       {/* Header */}
@@ -839,7 +1100,9 @@ export default function Admin() {
             <div>
               <p className="text-amber-800 font-medium text-sm">Supabase not configured</p>
               <p className="text-amber-600 text-xs mt-0.5">
-                Add <code className="bg-amber-100 px-1 rounded">VITE_SUPABASE_URL</code> and <code className="bg-amber-100 px-1 rounded">VITE_SUPABASE_ANON_KEY</code> to your <code className="bg-amber-100 px-1 rounded">.env.local</code> file to enable editing.
+                Add <code className="bg-amber-100 px-1 rounded">VITE_SUPABASE_URL</code> and{' '}
+                <code className="bg-amber-100 px-1 rounded">VITE_SUPABASE_ANON_KEY</code> to your{' '}
+                <code className="bg-amber-100 px-1 rounded">.env.local</code> file to enable editing.
               </p>
             </div>
           </div>
@@ -872,7 +1135,7 @@ export default function Admin() {
         <div className="max-w-4xl">
           {activeTab === 'memories' && <MemoriesTab toast={toast} />}
           {activeTab === 'timeline' && <TimelineTab toast={toast} />}
-          {activeTab === 'notes' && <QuotesTab toast={toast} />}
+          {activeTab === 'notes'    && <QuotesTab toast={toast} />}
         </div>
       </div>
 

@@ -213,3 +213,63 @@ export async function adminGetAllQuotes() {
   if (error) throw error
   return data || []
 }
+
+// ─── Memory Images (Multiple Media) ─────────────────────────
+
+export async function getMemoryImages(memoryId) {
+  if (!isSupabaseConfigured) throw new Error('Supabase not configured')
+
+  const { data, error } = await supabase
+    .from('memory_images')
+    .select('*')
+    .eq('memory_id', memoryId)
+    .order('sort_order')
+
+  if (error) throw error
+  return data || []
+}
+
+export async function addMemoryImages(memoryId, files, onProgress) {
+  if (!isSupabaseConfigured) throw new Error('Supabase not configured')
+
+  const results = []
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    // Tentukan folder dan type berdasarkan file mime
+    const isVideo = file.type.startsWith('video/')
+    const folder = isVideo ? 'videos' : 'photos'
+    const mediaType = isVideo ? 'video' : 'photo'
+
+    const url = await uploadFile(file, folder)
+
+    const { data, error } = await supabase
+      .from('memory_images')
+      .insert([{
+        memory_id: memoryId,
+        image_url: url,
+        type: mediaType,
+        sort_order: i,
+      }])
+      .select()
+      .single()
+
+    if (error) throw error
+    results.push(data)
+
+    if (onProgress) onProgress(i + 1, files.length)
+  }
+  return results
+}
+
+export async function reorderMemoryImages(memoryId, orderedIds) {
+  if (!isSupabaseConfigured) throw new Error('Supabase not configured')
+
+  const updates = orderedIds.map((id, idx) =>
+    supabase
+      .from('memory_images')
+      .update({ sort_order: idx })
+      .eq('id', id)
+      .eq('memory_id', memoryId)
+  )
+  await Promise.all(updates)
+}
