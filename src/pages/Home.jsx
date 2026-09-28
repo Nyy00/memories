@@ -311,14 +311,39 @@ function GalleryPreview({ images }) {
               className={`relative overflow-hidden rounded-2xl bg-warm-100 group cursor-pointer ${i === 0 ? 'col-span-2 row-span-2 aspect-[4/3]' : 'aspect-square'
                 }`}
             >
-              <img
-                src={img.thumb || img.url}
-                alt={img.caption || 'Gallery'}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <p className="text-white text-sm font-medium">{img.caption}</p>
+              {img.type === 'video' && !img.thumb ? (
+                <video
+                  src={img.url}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  muted
+                  preload="metadata"
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={img.thumb || img.url}
+                  alt={img.caption || 'Gallery'}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                  onError={(e) => {
+                    if (e.target.src !== img.url && img.url) {
+                      e.target.src = img.url
+                    }
+                  }}
+                />
+              )}
+
+              {/* Play icon overlay for videos */}
+              {img.type === 'video' && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <div className="w-10 h-10 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center border border-white/20 shadow-sm">
+                    <div className="w-0 h-0 border-y-[6px] border-y-transparent border-l-[10px] border-l-white ml-1"></div>
+                  </div>
+                </div>
+              )}
+
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
+                <p className="text-white text-sm font-medium translate-y-2 group-hover:translate-y-0 transition-transform duration-300">{img.caption}</p>
               </div>
             </motion.div>
           ))}
