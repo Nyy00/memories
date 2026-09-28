@@ -250,7 +250,8 @@ export async function getGalleryImages() {
   // Foto/video ekstra dari memory_images
   const extraItems = (extraMedia || []).map(e => {
     const mem = memoryMap[e.memory_id] || {}
-    const isVideo = e.type === 'video'
+    // Perbaikan: deteksi video juga dari URL (jika di DB terlanjur tersimpan sebagai 'photo')
+    const isVideo = e.type === 'video' || (e.image_url && e.image_url.includes('/videos/')) || (e.image_url && e.image_url.match(/\.(mp4|webm|mov|ogg)$/i))
     return {
       id: `img-${e.id}`,
       url: e.image_url,
@@ -258,7 +259,7 @@ export async function getGalleryImages() {
       caption: e.caption || mem.title || '',
       date: mem.memory_date || null,
       location: mem.location || '',
-      type: isVideo ? 'video' : 'photo',
+      type: isVideo ? 'video' : 'photo', // Pastikan type benar-benar video jika terdeteksi dari URL
       memory_id: e.memory_id,
       memory_slug: mem.slug || null,
       is_cover: false,
