@@ -223,20 +223,29 @@ export async function getGalleryImages() {
   // agar cover_image tidak double jika ada extra media
   const memoriesWithExtras = new Set((extraMedia || []).map(e => e.memory_id))
 
-  // Cover images dari memories (hanya yang TIDAK punya ekstra, atau tetap tampilkan cover)
-  // Keputusan: cover selalu masuk galeri sebagai item pertama dari tiap memory
-  const coverItems = (memoriesData || []).map(m => ({
-    id: `mem-${m.id}`,
-    url: m.type === 'video' && m.video_url ? m.video_url : m.cover_image,
-    thumb: m.cover_image,
-    caption: m.title,
-    date: m.memory_date,
-    location: m.location,
-    type: m.type === 'video' ? 'video' : 'photo',
-    memory_id: m.id,
-    memory_slug: m.slug,
-    is_cover: true,
-  }))
+  // Cover images dari memories
+  // Untuk video: url = video_url, thumb = cover_image (boleh null → gallery akan pakai <video>)
+  const coverItems = (memoriesData || [])
+    .map(m => {
+      const isVideo = m.type === 'video'
+      const url = isVideo && m.video_url ? m.video_url : m.cover_image
+      const thumb = m.cover_image || null  // null ok, Gallery akan render <video> sebagai fallback
+      // Lewati item yang tidak punya media sama sekali
+      if (!url && !thumb) return null
+      return {
+        id: `mem-${m.id}`,
+        url,
+        thumb,
+        caption: m.title,
+        date: m.memory_date,
+        location: m.location,
+        type: isVideo ? 'video' : 'photo',
+        memory_id: m.id,
+        memory_slug: m.slug,
+        is_cover: true,
+      }
+    })
+    .filter(Boolean)  // buang yang null
 
   // Foto/video ekstra dari memory_images
   const extraItems = (extraMedia || []).map(e => {

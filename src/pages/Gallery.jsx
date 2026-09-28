@@ -127,13 +127,30 @@ export default function Gallery() {
                 onClick={() => setLightboxIdx(i)}
               >
                 <div className="relative overflow-hidden rounded-2xl bg-warm-100">
-                  {/* Thumbnail grid selalu pakai cover_image (img.thumb) */}
-                  <img
-                    src={img.thumb}
-                    alt={img.caption || `Photo ${i + 1}`}
-                    className="w-full object-cover block transition-transform duration-700 group-hover:scale-110"
-                    loading="lazy"
-                  />
+                  {/* Thumbnail: gunakan <video> jika thumb kosong dan tipe video */}
+                  {img.type === 'video' && !img.thumb ? (
+                    <video
+                      src={img.url}
+                      className="w-full object-cover block"
+                      muted
+                      preload="metadata"
+                      playsInline
+                      style={{ maxHeight: 320 }}
+                    />
+                  ) : (
+                    <img
+                      src={img.thumb}
+                      alt={img.caption || `Gallery ${i + 1}`}
+                      className="w-full object-cover block transition-transform duration-700 group-hover:scale-110"
+                      loading="lazy"
+                      onError={(e) => {
+                        // Fallback: coba pakai url langsung jika thumb gagal load
+                        if (e.target.src !== img.url && img.url) {
+                          e.target.src = img.url
+                        }
+                      }}
+                    />
+                  )}
 
                   {/* Video play overlay */}
                   {img.type === 'video' && (
