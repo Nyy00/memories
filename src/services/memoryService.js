@@ -145,20 +145,45 @@ export async function getMemoryStats() {
   const { count: total } = await supabase
     .from('memories')
     .select('*', { count: 'exact', head: true })
-  const { count: photos } = await supabase
+  
+  const { count: memPhotos } = await supabase
     .from('memories')
     .select('*', { count: 'exact', head: true })
     .eq('type', 'photo')
-  const { count: videos } = await supabase
+    
+  const { count: memVideos } = await supabase
     .from('memories')
     .select('*', { count: 'exact', head: true })
     .eq('type', 'video')
+
+  // Hitung juga media ekstra dari memory_images
+  const { data: extras } = await supabase
+    .from('memory_images')
+    .select('type, image_url')
+
+  let extraPhotos = 0
+  let extraVideos = 0
+  if (extras) {
+    extras.forEach(e => {
+      const isVideo = e.type === 'video' || (e.image_url && e.image_url.includes('/videos/')) || (e.image_url && e.image_url.match(/\.(mp4|webm|mov|ogg)$/i))
+      if (isVideo) {
+        extraVideos++
+      } else {
+        extraPhotos++
+      }
+    })
+  }
 
   const startDate = new Date('2025-06-17')
   const years = ((new Date() - startDate) / (1000 * 60 * 60 * 24 * 365.25)).toFixed(1)
 
   return {
-    data: { total: total || 0, photos: photos || 0, videos: videos || 0, years: parseFloat(years) },
+    data: { 
+      total: total || 0, 
+      photos: (memPhotos || 0) + extraPhotos, 
+      videos: (memVideos || 0) + extraVideos, 
+      years: parseFloat(years) 
+    },
     error: null,
   }
 }
