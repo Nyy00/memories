@@ -277,7 +277,7 @@ function GalleryPreview({ images }) {
                 }`}
             >
               <img
-                src={img.url}
+                src={img.thumb || img.url}
                 alt={img.caption || 'Gallery'}
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 loading="lazy"
