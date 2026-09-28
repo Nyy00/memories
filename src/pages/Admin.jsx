@@ -543,13 +543,7 @@ function MemoryForm({ initial = null, onSave, onCancel, toast }) {
         </div>
       </form>
 
-      {/* ── Multi-upload section — muncul setelah memory tersimpan ── */}
-      {isSupabaseConfigured && savedMemory?.id && (
-        <MediaGallerySection
-          memoryId={savedMemory.id}
-          toast={toast}
-        />
-      )}
+      {/* Foto/Video dikelola via tombol 📸 di daftar memory */}
     </div>
   )
 }
@@ -557,11 +551,13 @@ function MemoryForm({ initial = null, onSave, onCancel, toast }) {
 // ─── Memories Tab ─────────────────────────────────────────────
 
 function MemoriesTab({ toast }) {
-  const [memories, setMemories]       = useState([])
-  const [loading, setLoading]         = useState(true)
-  const [showForm, setShowForm]       = useState(false)
-  const [editing, setEditing]         = useState(null)
+  const [memories, setMemories]         = useState([])
+  const [loading, setLoading]           = useState(true)
+  const [showForm, setShowForm]         = useState(false)
+  const [editing, setEditing]           = useState(null)
   const [deleteTarget, setDeleteTarget] = useState(null)
+  // ID memory yang sedang expand MediaGallerySection-nya
+  const [expandedMediaId, setExpandedMediaId] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -576,7 +572,6 @@ function MemoriesTab({ toast }) {
 
   useEffect(() => { load() }, [load])
 
-  // handleSave now returns the saved memory so MemoryForm can open MediaGallerySection
   const handleSave = async (form) => {
     try {
       let saved
@@ -585,18 +580,14 @@ function MemoriesTab({ toast }) {
         toast('Memory updated ✓')
       } else {
         saved = await createMemory(form)
-        toast('Memory added ✓ — tambahkan foto/video di bawah')
+        toast('Memory added ✓ — klik 📸 untuk tambah foto/video')
       }
-      // Tidak tutup form saat baru dibuat supaya bisa langsung upload foto
-      if (editing) {
-        setShowForm(false)
-        setEditing(null)
-        load()
-      } else {
-        // Setelah create: setEditing ke data baru agar MediaGallerySection aktif
-        setEditing(saved)
-        setShowForm(false)
-        load()
+      setShowForm(false)
+      setEditing(null)
+      await load()
+      // Jika memory baru dibuat, langsung expand gallery-nya
+      if (!editing && saved?.id) {
+        setExpandedMediaId(saved.id)
       }
       return saved
     } catch (e) {
@@ -609,6 +600,7 @@ function MemoriesTab({ toast }) {
       await deleteMemory(deleteTarget.id)
       toast('Memory deleted')
       setDeleteTarget(null)
+      if (expandedMediaId === deleteTarget.id) setExpandedMediaId(null)
       load()
     } catch (e) {
       toast(e.message, 'error')
@@ -622,15 +614,16 @@ function MemoriesTab({ toast }) {
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl text-warm-800">Memories ({memories.length})</h2>
         <button
-          onClick={() => { setEditing(null); setShowForm(true) }}
+          onClick={() => { setEditing(null); setShowForm(true); setExpandedMediaId(null) }}
           className="btn-primary"
         >
           <Plus size={16} /> Add Memory
         </button>
       </div>
 
+      {/* Form tambah / edit memory */}
       <AnimatePresence>
-        {(showForm || editing) && (
+        {showForm && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -641,6 +634,7 @@ function MemoriesTab({ toast }) {
               {editing ? `Edit: ${editing.title}` : 'New Memory'}
             </h3>
             <MemoryForm
+              key={editing?.id || 'new'}
               initial={editing}
               onSave={handleSave}
               onCancel={() => { setShowForm(false); setEditing(null) }}
@@ -662,53 +656,89 @@ function MemoriesTab({ toast }) {
           <p>No memories yet. Add your first one!</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {memories.map((m, i) => (
             <motion.div
               key={m.id}
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.03 }}
-              className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-warm-100 hover:border-rose-200 transition-colors"
+              className="bg-white rounded-2xl border border-warm-100 overflow-hidden"
             >
-              {m.cover_image && (
-                <img src={m.cover_image} alt="" className="w-14 h-14 rounded-xl object-cover shrink-0" />
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-warm-800 truncate">{m.title}</span>
-                  {m.is_featured && <Star size={12} className="text-rose-400 fill-rose-300 shrink-0" />}
+              {/* Row utama */}
+              <div className="flex items-center gap-3 p-4">
+                {m.cover_image && (
+                  <img src={m.cover_image} alt="" className="w-12 h-12 rounded-xl object-cover shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-warm-800 truncate text-sm">{m.title}</span>
+                    {m.is_featured && <Star size={11} className="text-rose-400 fill-rose-300 shrink-0" />}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-warm-400 mt-0.5">
+                    <span className="flex items-center gap-1">{typeIcon[m.type]} {m.type}</span>
+                    {m.memory_date && <span>· {m.memory_date}</span>}
+                    {m.location && <span className="hidden sm:inline">· {m.location}</span>}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-xs text-warm-400 mt-0.5">
-                  <span className="flex items-center gap-1">{typeIcon[m.type]} {m.type}</span>
-                  {m.memory_date && <span>· {m.memory_date}</span>}
-                  {m.location && <span>· {m.location}</span>}
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {/* Tombol kelola foto/video */}
+                  {isSupabaseConfigured && (
+                    <button
+                      onClick={() => setExpandedMediaId(expandedMediaId === m.id ? null : m.id)}
+                      className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-colors ${
+                        expandedMediaId === m.id
+                          ? 'bg-rose-500 text-white'
+                          : 'bg-rose-50 text-rose-500 hover:bg-rose-100'
+                      }`}
+                      title="Kelola foto/video"
+                    >
+                      <Images size={13} />
+                      <span className="hidden sm:inline">Foto/Video</span>
+                    </button>
+                  )}
+                  <Link
+                    to={`/memories/${m.slug || m.id}`}
+                    target="_blank"
+                    className="p-2 rounded-xl text-warm-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                    title="View"
+                  >
+                    <Eye size={15} />
+                  </Link>
+                  <button
+                    onClick={() => { setEditing(m); setShowForm(true); setExpandedMediaId(null) }}
+                    className="p-2 rounded-xl text-warm-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+                    title="Edit"
+                  >
+                    <Edit2 size={15} />
+                  </button>
+                  <button
+                    onClick={() => setDeleteTarget(m)}
+                    className="p-2 rounded-xl text-warm-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 size={15} />
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <Link
-                  to={`/memories/${m.slug || m.id}`}
-                  target="_blank"
-                  className="p-2 rounded-xl text-warm-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
-                  title="View"
-                >
-                  <Eye size={16} />
-                </Link>
-                <button
-                  onClick={() => { setEditing(m); setShowForm(false) }}
-                  className="p-2 rounded-xl text-warm-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
-                  title="Edit"
-                >
-                  <Edit2 size={16} />
-                </button>
-                <button
-                  onClick={() => setDeleteTarget(m)}
-                  className="p-2 rounded-xl text-warm-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
+
+              {/* Panel galeri media (inline expand) */}
+              <AnimatePresence>
+                {expandedMediaId === m.id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    className="overflow-hidden border-t border-rose-50"
+                  >
+                    <div className="px-4 pb-4">
+                      <MediaGallerySection memoryId={m.id} toast={toast} />
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           ))}
         </div>
