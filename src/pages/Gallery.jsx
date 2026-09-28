@@ -27,7 +27,8 @@ export default function Gallery() {
 
   const normalizedImages = (images || []).map((img) => ({
     id: img.id,
-    url: img.url || img.image_url,
+    url: img.url || img.image_url,           // video_url untuk video, cover_image untuk foto
+    thumb: img.thumb || img.url || img.image_url, // selalu cover_image untuk thumbnail grid
     caption: img.caption,
     date: img.date || img.created_at,
     location: img.location || img.memories?.location,
@@ -122,8 +123,9 @@ export default function Gallery() {
                 onClick={() => setLightboxIdx(i)}
               >
                 <div className="relative overflow-hidden rounded-2xl bg-warm-100">
+                  {/* Thumbnail grid selalu pakai cover_image (img.thumb) */}
                   <img
-                    src={img.url}
+                    src={img.thumb}
                     alt={img.caption || `Photo ${i + 1}`}
                     className="w-full object-cover block transition-transform duration-700 group-hover:scale-110"
                     loading="lazy"

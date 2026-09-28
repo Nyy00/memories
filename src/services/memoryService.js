@@ -191,7 +191,7 @@ export async function getGalleryImages() {
   // Ambil semua memories yang punya cover_image (foto & video)
   const { data: memoriesData, error: memError } = await supabase
     .from('memories')
-    .select('id, cover_image, title, memory_date, location, type')
+    .select('id, cover_image, video_url, title, memory_date, location, type')
     .not('cover_image', 'is', null)
     .neq('cover_image', '')
 
@@ -210,7 +210,10 @@ export async function getGalleryImages() {
   const combined = [
     ...memoriesData.map(m => ({
       id: `mem-${m.id}`,
-      url: m.cover_image,
+      // Untuk video: url = video_url (agar bisa diputar di lightbox)
+      // Untuk foto:  url = cover_image
+      url: m.type === 'video' && m.video_url ? m.video_url : m.cover_image,
+      thumb: m.cover_image,    // selalu pakai cover_image sebagai thumbnail grid
       caption: m.title,
       date: m.memory_date,
       location: m.location,
